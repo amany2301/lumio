@@ -1,249 +1,209 @@
-# Lumio 🚀
+# Lumio
 
-A comprehensive monitoring and logging SDK for Flutter applications. Lumio provides real-time logging for API responses, network calls, crashes, and ANRs (Application Not Responding events) on both Android and iOS platforms.
+**On-device debugging framework for Flutter applications**
 
-## Features ✨
+Lumio helps in the inspection of HTTP requests/responses, captures Crashes and ANRs, and provides APIs to access debugging information. It comes with a UI to monitor and share the information, as well as APIs to access and use that information in your application.
 
-- **API Response Logging**: Automatically log HTTP responses with URL, status code, and response body
-- **Network Call Logging**: Track network requests with method, URL, and duration
-- **Crash Monitoring**: Capture and log both Flutter and native crashes with stack traces
-- **ANR Detection**: Monitor and log Application Not Responding events (Android only)
-- **Cross-Platform**: Full support for both Android and iOS
-- **Easy Integration**: Simple setup with minimal configuration
-- **HTTP Client Wrapper**: Built-in HTTP client with automatic logging
+## Features
 
-## Installation 🚀
+### 🔍 HTTP Request/Response Inspection
+- **Automatic HTTP logging** with detailed request and response information
+- **cURL command generation** for easy API testing
+- **Request/response headers** and body inspection
+- **Performance metrics** including request duration
+- **Error tracking** with detailed stack traces
 
-Add this to your package's `pubspec.yaml` file:
+### 🐛 Crash and ANR Capture
+- **Automatic crash detection** for Flutter and native errors
+- **ANR (Application Not Responding) monitoring** for Android
+- **Detailed stack traces** for debugging
+- **Error categorization** and filtering
+
+### 📱 On-Device UI
+- **Floating debug overlay** with real-time metrics
+- **Expandable debug panel** showing HTTP, crash, and ANR counts
+- **Quick actions** for clearing logs and sharing data
+- **Non-intrusive** design that doesn't interfere with your app
+
+### 🔧 APIs for Data Access
+- **HTTP client wrapper** with automatic logging
+- **Manual logging APIs** for custom debugging
+- **Programmatic access** to debugging information
+- **Configurable logging levels** and options
+
+## Installation
+
+Add Lumio to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
   lumio: ^0.0.1
 ```
 
-Then run:
-
-```bash
-flutter pub get
-```
-
-## Quick Start 🏃‍♂️
+## Quick Start
 
 ### 1. Initialize Lumio
 
-Initialize Lumio in your app's main function:
-
 ```dart
-import 'package:flutter/material.dart';
 import 'package:lumio/lumio.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Lumio monitoring
+  // Initialize Lumio debugging framework
   await Lumio.initialize(
     enableCrashMonitoring: true,
-    enableAnrMonitoring: true, // Android only
+    enableAnrMonitoring: true,
   );
   
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 ```
 
-### 2. Manual Logging
-
-Use Lumio static methods to manually log events:
+### 2. Wrap Your App with Debug Overlay
 
 ```dart
-// Log API responses
-await Lumio.logApiResponse(
-  'https://api.example.com/users',
-  200,
-  '{"users": [{"id": 1, "name": "John"}]}',
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return LumioApp(
+      enableDebugOverlay: true,
+      child: MaterialApp(
+        title: 'My App',
+        home: MyHomePage(),
+      ),
+    );
+  }
+}
+```
+
+### 3. Use HTTP Client for Automatic Logging
+
+```dart
+import 'package:lumio/lumio.dart';
+
+class MyService {
+  final LumioHttpClient _httpClient = LumioHttpClient();
+  
+  Future<void> fetchData() async {
+    try {
+      // This automatically logs HTTP request and response
+      final response = await _httpClient.get('https://api.example.com/data');
+      // Process response...
+    } catch (e) {
+      // Errors are automatically logged
+    }
+  }
+  
+  void dispose() {
+    _httpClient.close();
+  }
+}
+```
+
+### 4. Manual Logging
+
+```dart
+// Log HTTP request
+await Lumio.logHttpRequest(
+  method: 'POST',
+  url: 'https://api.example.com/users',
+  headers: {'Content-Type': 'application/json'},
+  body: '{"name": "John Doe"}',
 );
 
-// Log network calls
-await Lumio.logNetworkCall('GET', 'https://api.example.com/users', 250);
+// Log HTTP response
+await Lumio.logHttpResponse(
+  url: 'https://api.example.com/users',
+  statusCode: 201,
+  body: '{"id": 123, "name": "John Doe"}',
+  headers: {'Content-Type': 'application/json'},
+  durationMs: 250,
+);
 
-// Log crashes
+// Log crash
 await Lumio.logCrash(
-  'Exception: Null check operator used on a null value',
-  'Stack trace here...',
+  'Division by zero error',
+  StackTrace.current.toString(),
 );
 
-// Log ANRs (Android only)
+// Log ANR (Android only)
 await Lumio.logAnr('Main thread blocked for 5000ms');
 ```
 
-### 3. Automatic HTTP Logging
+## Debug UI
 
-Use the built-in HTTP client for automatic logging:
+Lumio provides a floating debug overlay that shows:
 
-```dart
-import 'package:lumio/lumio.dart';
+- **HTTP request count** (green)
+- **Crash count** (red)  
+- **ANR count** (orange)
 
-final httpClient = LumioHttpClient();
+Tap the floating button to expand the panel and access:
+- Detailed metrics
+- Clear logs button
+- Share logs button
 
-// This automatically logs both the network call and API response
-final response = await httpClient.get('https://api.example.com/users');
+## Viewing Logs
 
-// Don't forget to close the client when done
-httpClient.close();
-```
+### iOS (Recommended)
+1. Open Xcode
+2. Go to Window → Devices and Simulators
+3. Select your device/simulator
+4. Click "Open Console"
+5. Filter by "[Lumio]" to see only your logs
 
-## Advanced Usage 🔧
+### Terminal/VS Code
+1. Run: `flutter logs`
+2. Look for `[Lumio]` entries
+3. Copy cURL commands to test in terminal
 
-### HTTP Interceptor
+## Configuration
 
-For manual HTTP request wrapping:
-
-```dart
-import 'package:lumio/lumio.dart';
-
-// Wrap your HTTP calls
-final result = await LumioHttpInterceptor.wrapResponse(
-  () => http.get(Uri.parse('https://api.example.com/users')),
-  'GET',
-  'https://api.example.com/users',
-);
-
-// Log responses manually
-LumioHttpInterceptor.logResponse(url, statusCode, responseBody);
-
-// Log errors manually
-LumioHttpInterceptor.logError(url, errorMessage);
-```
-
-### Configuration Options
+### Logger Settings
 
 ```dart
-await Lumio.initialize(
-  enableCrashMonitoring: true,  // Enable crash detection
-  enableAnrMonitoring: true,    // Enable ANR detection (Android only)
-);
+// Disable detailed logging
+LumioLogger.setDetailedLogging(false);
 
-// Check initialization status
-print('Initialized: ${Lumio.isInitialized}');
-print('Crash monitoring: ${Lumio.isCrashMonitoringEnabled}');
-print('ANR monitoring: ${Lumio.isAnrMonitoringEnabled}');
+// Disable cURL generation
+LumioLogger.setCurlGeneration(false);
 ```
 
-## Platform Support 📱
-
-| Feature | Android | iOS |
-|---------|---------|-----|
-| API Response Logging | ✅ | ✅ |
-| Network Call Logging | ✅ | ✅ |
-| Crash Monitoring | ✅ | ✅ |
-| ANR Detection | ✅ | ❌ |
-
-## Data Models 📊
-
-Lumio includes built-in data models for structured logging:
+### Debug Overlay Settings
 
 ```dart
-// Network call log
-final networkLog = NetworkCallLog(
-  method: 'GET',
-  url: 'https://api.example.com',
-  durationMs: 250,
-  timestamp: DateTime.now(),
-);
-
-// API response log
-final apiLog = ApiResponseLog(
-  url: 'https://api.example.com',
-  statusCode: 200,
-  body: 'response body',
-  timestamp: DateTime.now(),
-);
-
-// Crash log
-final crashLog = CrashLog(
-  error: 'Exception message',
-  stackTrace: 'Stack trace...',
-  timestamp: DateTime.now(),
-);
-
-// ANR log
-final anrLog = AnrLog(
-  message: 'Main thread blocked',
-  timestamp: DateTime.now(),
-);
+LumioApp(
+  enableDebugOverlay: false, // Disable debug overlay
+  child: MyApp(),
+)
 ```
 
-## Implementation Details 🔍
+## Example
 
-### Android Implementation
+See the `example/` directory for a complete working example that demonstrates:
 
-- **Logging**: Uses Android's `Log` class with appropriate log levels
-- **Crash Handling**: Implements `Thread.UncaughtExceptionHandler`
-- **ANR Detection**: Custom ANR watchdog monitors main thread responsiveness
-- **Method Channel**: Communicates with Flutter via `MethodChannel`
+- HTTP request/response logging
+- Crash simulation and capture
+- ANR monitoring
+- Debug overlay usage
+- Manual logging APIs
 
-### iOS Implementation
-
-- **Logging**: Uses `print()` statements for console output
-- **Crash Handling**: Uses `NSSetUncaughtExceptionHandler` and signal handlers
-- **ANR Detection**: Not applicable (iOS handles this differently)
-- **Method Channel**: Communicates with Flutter via `FlutterMethodChannel`
-
-## Example App 📱
-
-The example app demonstrates all Lumio features:
-
-```bash
-cd example
-flutter run
-```
-
-Features demonstrated:
-- Manual API response logging
-- Manual network call logging
-- Manual crash logging
-- Manual ANR logging
-- Automatic HTTP client logging
-- Crash simulation
-
-## Testing 🧪
-
-Run the tests:
-
-```bash
-flutter test
-```
-
-The test suite includes:
-- Platform interface tests
-- Method channel tests
-- Mock implementations
-- Integration tests
-
-## Contributing 🤝
+## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
 
-## License 📄
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Changelog 📝
+## Support
 
-See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes.
-
-## Support 💬
-
-If you encounter any issues or have questions:
-
-1. Check the [example app](example/) for usage patterns
-2. Review the [API documentation](lib/)
-3. Open an issue on GitHub
-
----
-
-**Lumio** - Comprehensive monitoring made simple for Flutter apps! 🚀
+- 📧 Email: [your-email@example.com]
+- 🐛 Issues: [GitHub Issues](https://github.com/amany2301/lumio/issues)
+- 📖 Documentation: [GitHub Wiki](https://github.com/amany2301/lumio/wiki)
 

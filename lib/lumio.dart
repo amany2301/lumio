@@ -5,35 +5,24 @@ import 'package:flutter/foundation.dart';
 
 import 'lumio_platform_interface.dart';
 
+// Core debugging components
+export 'src/debug_ui/lumio_debug_overlay.dart';
+export 'src/interceptors/lumio_http_interceptor.dart';
+export 'src/utils/lumio_logger.dart';
 
-// Network Plugin
-export 'src/plugins/network/network_manager.dart';
-export 'src/plugins/network/network_data.dart';
-export 'src/plugins/network/network_screen.dart';
-export 'src/plugins/network/network_detail_screen.dart';
-
-// Crashes Plugin
-export 'src/plugins/crashes/crash_manager.dart';
-export 'src/plugins/crashes/crash_data.dart';
-export 'src/plugins/crashes/crash_screen.dart';
-export 'src/plugins/crashes/crash_detail_screen.dart';
-
-// Logger Plugin
-export 'src/plugins/logger/logger_manager.dart';
-export 'src/plugins/logger/logger_data.dart';
-export 'src/plugins/logger/logger_screen.dart';
-export 'src/plugins/logger/log_detail_screen.dart';
-
-// Debug UI Framework
-export 'src/debug_ui/app_pulse_debug_overlay.dart';
-
-/// Lumio - A comprehensive monitoring and logging SDK for Flutter applications
+/// Lumio - On-device debugging framework for Flutter applications
+/// 
+/// Features:
+/// - HTTP request/response inspection
+/// - Crash and ANR capture
+/// - On-device UI for monitoring
+/// - APIs to access debugging information
 class Lumio {
   static bool _isInitialized = false;
   static bool _crashMonitoringEnabled = false;
   static bool _anrMonitoringEnabled = false;
 
-  /// Initialize Lumio monitoring
+  /// Initialize Lumio debugging framework
   static Future<void> initialize({
     bool enableCrashMonitoring = true,
     bool enableAnrMonitoring = true,
@@ -56,21 +45,32 @@ class Lumio {
     return LumioPlatform.instance.getPlatformVersion();
   }
 
-  /// Log API response with URL, status code, and response body
-  static Future<void> logApiResponse(String url, int statusCode, String body) async {
+  /// Log HTTP request/response for inspection
+  static Future<void> logHttpRequest({
+    required String method,
+    required String url,
+    Map<String, String>? headers,
+    String? body,
+  }) async {
     try {
-      await LumioPlatform.instance.logApiResponse(url, statusCode, body);
+      await LumioPlatform.instance.logHttpRequest(method, url, headers, body);
     } catch (e) {
-      debugPrint('AppPulse: Failed to log API response: $e');
+      debugPrint('Lumio: Failed to log HTTP request: $e');
     }
   }
 
-  /// Log network call with method, URL, and duration
-  static Future<void> logNetworkCall(String method, String url, int durationMs) async {
+  /// Log HTTP response for inspection
+  static Future<void> logHttpResponse({
+    required String url,
+    required int statusCode,
+    required String body,
+    Map<String, String>? headers,
+    int? durationMs,
+  }) async {
     try {
-      await LumioPlatform.instance.logNetworkCall(method, url, durationMs);
+      await LumioPlatform.instance.logHttpResponse(url, statusCode, body, headers, durationMs);
     } catch (e) {
-      debugPrint('AppPulse: Failed to log network call: $e');
+      debugPrint('Lumio: Failed to log HTTP response: $e');
     }
   }
 
@@ -79,7 +79,7 @@ class Lumio {
     try {
       await LumioPlatform.instance.logCrash(error, stackTrace);
     } catch (e) {
-      debugPrint('AppPulse: Failed to log crash: $e');
+      debugPrint('Lumio: Failed to log crash: $e');
     }
   }
 
@@ -88,7 +88,7 @@ class Lumio {
     try {
       await LumioPlatform.instance.logAnr(message);
     } catch (e) {
-      debugPrint('AppPulse: Failed to log ANR: $e');
+      debugPrint('Lumio: Failed to log ANR: $e');
     }
   }
 
@@ -115,7 +115,7 @@ class Lumio {
       await LumioPlatform.instance.initializeCrashMonitoring();
       _crashMonitoringEnabled = true;
     } catch (e) {
-      debugPrint('AppPulse: Failed to initialize crash monitoring: $e');
+      debugPrint('Lumio: Failed to initialize crash monitoring: $e');
     }
   }
 
@@ -127,11 +127,11 @@ class Lumio {
       await LumioPlatform.instance.initializeAnrMonitoring();
       _anrMonitoringEnabled = true;
     } catch (e) {
-      debugPrint('AppPulse: Failed to initialize ANR monitoring: $e');
+      debugPrint('Lumio: Failed to initialize ANR monitoring: $e');
     }
   }
 
-  /// Check if AppPulse is initialized
+  /// Check if Lumio is initialized
   static bool get isInitialized => _isInitialized;
 
   /// Check if crash monitoring is enabled

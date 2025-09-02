@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
-/// Enhanced logger for Lumio with cURL generation and better formatting
+/// Enhanced logger for Lumio HTTP debugging with cURL generation and better formatting
 class LumioLogger {
   static const String _tag = '[Lumio]';
   static bool _enableDetailedLogging = true;
@@ -17,14 +17,58 @@ class LumioLogger {
     _enableCurlGeneration = enabled;
   }
 
-  /// Log API response with enhanced formatting
-  static void logApiResponse({
+  /// Log HTTP request with enhanced formatting
+  static void logHttpRequest({
+    required String method,
+    required String url,
+    Map<String, String>? headers,
+    String? body,
+  }) {
+    if (!_enableDetailedLogging) return;
+
+    final timestamp = DateTime.now().toIso8601String();
+    final separator = '=' * 60;
+    
+    debugPrint('$_tag $separator');
+    debugPrint('$_tag HTTP REQUEST [$timestamp]');
+    debugPrint('$_tag $separator');
+    debugPrint('$_tag Method: $method');
+    debugPrint('$_tag URL: $url');
+    
+    if (headers != null && headers.isNotEmpty) {
+      debugPrint('$_tag Headers:');
+      headers.forEach((key, value) {
+        debugPrint('$_tag   $key: $value');
+      });
+    }
+    
+    if (body != null && body.isNotEmpty) {
+      debugPrint('$_tag Request Body:');
+      debugPrint('$_tag   ${_formatJson(body)}');
+    }
+    
+    // Generate cURL command
+    if (_enableCurlGeneration) {
+      final curlCommand = _generateCurlCommand(
+        method: method,
+        url: url,
+        headers: headers,
+        body: body,
+      );
+      debugPrint('$_tag');
+      debugPrint('$_tag cURL Command:');
+      debugPrint('$_tag $curlCommand');
+    }
+    
+    debugPrint('$_tag $separator');
+  }
+
+  /// Log HTTP response with enhanced formatting
+  static void logHttpResponse({
     required String url,
     required int statusCode,
-    required String method,
-    required String responseBody,
+    required String body,
     Map<String, String>? headers,
-    String? requestBody,
     int? durationMs,
   }) {
     if (!_enableDetailedLogging) return;
@@ -33,9 +77,8 @@ class LumioLogger {
     final separator = '=' * 60;
     
     debugPrint('$_tag $separator');
-    debugPrint('$_tag API RESPONSE [$timestamp]');
+    debugPrint('$_tag HTTP RESPONSE [$timestamp]');
     debugPrint('$_tag $separator');
-    debugPrint('$_tag Method: $method');
     debugPrint('$_tag URL: $url');
     debugPrint('$_tag Status: $statusCode ${_getStatusText(statusCode)}');
     
@@ -50,55 +93,8 @@ class LumioLogger {
       });
     }
     
-    if (requestBody != null && requestBody.isNotEmpty) {
-      debugPrint('$_tag Request Body:');
-      debugPrint('$_tag   ${_formatJson(requestBody)}');
-    }
-    
     debugPrint('$_tag Response Body:');
-    debugPrint('$_tag   ${_formatJson(responseBody)}');
-    
-    // Generate cURL command
-    if (_enableCurlGeneration) {
-      final curlCommand = _generateCurlCommand(
-        method: method,
-        url: url,
-        headers: headers,
-        body: requestBody,
-      );
-      debugPrint(_tag);
-      debugPrint('$_tag cURL Command:');
-      debugPrint('$_tag $curlCommand');
-    }
-    
-    debugPrint('$_tag $separator');
-  }
-
-  /// Log network call with enhanced formatting
-  static void logNetworkCall({
-    required String method,
-    required String url,
-    required int durationMs,
-    Map<String, String>? headers,
-    String? requestBody,
-  }) {
-    if (!_enableDetailedLogging) return;
-
-    final timestamp = DateTime.now().toIso8601String();
-    final separator = '-' * 40;
-    
-    debugPrint('$_tag $separator');
-    debugPrint('$_tag NETWORK CALL [$timestamp]');
-    debugPrint('$_tag $method $url');
-    debugPrint('$_tag Duration: ${durationMs}ms');
-    
-    if (headers != null && headers.isNotEmpty) {
-      debugPrint('$_tag Headers: ${headers.length} items');
-    }
-    
-    if (requestBody != null && requestBody.isNotEmpty) {
-      debugPrint('$_tag Request Body Size: ${requestBody.length} chars');
-    }
+    debugPrint('$_tag   ${_formatJson(body)}');
     
     debugPrint('$_tag $separator');
   }

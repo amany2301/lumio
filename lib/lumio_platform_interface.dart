@@ -27,14 +27,14 @@ abstract class LumioPlatform extends PlatformInterface {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 
-  /// Log API response with URL, status code, and response body
-  Future<void> logApiResponse(String url, int statusCode, String body) {
-    throw UnimplementedError('logApiResponse() has not been implemented.');
+  /// Log HTTP request for inspection
+  Future<void> logHttpRequest(String method, String url, Map<String, String>? headers, String? body) {
+    throw UnimplementedError('logHttpRequest() has not been implemented.');
   }
 
-  /// Log network call with method, URL, and duration
-  Future<void> logNetworkCall(String method, String url, int durationMs) {
-    throw UnimplementedError('logNetworkCall() has not been implemented.');
+  /// Log HTTP response for inspection
+  Future<void> logHttpResponse(String url, int statusCode, String body, Map<String, String>? headers, int? durationMs) {
+    throw UnimplementedError('logHttpResponse() has not been implemented.');
   }
 
   /// Log crash with error message and stack trace

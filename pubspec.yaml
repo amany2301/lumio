@@ -1,7 +1,7 @@
 name: lumio
-description: "A comprehensive monitoring and logging SDK for Flutter applications. Provides real-time logging for API responses, network calls, crashes, and ANRs."
+description: "On-device debugging framework for Flutter applications. Helps in the inspection of HTTP requests/responses, captures Crashes and ANRs, and provides APIs to access debugging information."
 version: 0.0.1
-homepage: https://github.com/yourdomain/lumio
+homepage: https://github.com/amany2301/lumio
 
 environment:
   sdk: ^3.8.1

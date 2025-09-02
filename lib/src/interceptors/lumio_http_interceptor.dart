@@ -4,7 +4,7 @@ import 'dart:convert';
 import '../../lumio.dart';
 import '../utils/lumio_logger.dart';
 
-/// HTTP Client wrapper that automatically logs network calls and API responses
+/// HTTP Client wrapper that automatically logs HTTP requests and responses for debugging
 class LumioHttpClient {
   final HttpClient _httpClient;
 
@@ -41,10 +41,6 @@ class LumioHttpClient {
     String? requestBody;
     Map<String, String> requestHeaders = {};
     
-    // Record the request start in Network Manager
-    final networkManager = NetworkManager();
-    String callId = '';
-    
     try {
       final uri = Uri.parse(url);
       final request = await _httpClient.openUrl(method, uri);
@@ -61,8 +57,8 @@ class LumioHttpClient {
         requestHeaders['content-type'] = 'application/json';
       }
       
-      // Record request in Network Manager
-      callId = networkManager.recordRequest(
+      // Log HTTP request
+      await Lumio.logHttpRequest(
         method: method,
         url: url,
         headers: requestHeaders,
@@ -81,49 +77,49 @@ class LumioHttpClient {
         responseHeaders[name] = values.join(', ');
       });
       
-      // Record response in Network Manager
-      networkManager.recordResponse(
-        id: callId,
-        statusCode: response.statusCode,
-        headers: responseHeaders,
-        body: responseBody,
-      );
-      
-                // Enhanced logging with cURL generation
-          LumioLogger.logApiResponse(
-        method: method,
+      // Log HTTP response
+      await Lumio.logHttpResponse(
         url: url,
         statusCode: response.statusCode,
-        responseBody: responseBody,
+        body: responseBody,
         headers: responseHeaders,
-        requestBody: requestBody,
         durationMs: stopwatch.elapsedMilliseconds,
       );
       
-      // Also log to Lumio for platform logging
-      Lumio.logNetworkCall(method, url, stopwatch.elapsedMilliseconds);
-      Lumio.logApiResponse(url, response.statusCode, responseBody);
+      // Enhanced logging with cURL generation
+      LumioLogger.logHttpRequest(
+        method: method,
+        url: url,
+        headers: requestHeaders,
+        body: requestBody,
+      );
+      
+      LumioLogger.logHttpResponse(
+        url: url,
+        statusCode: response.statusCode,
+        body: responseBody,
+        headers: responseHeaders,
+        durationMs: stopwatch.elapsedMilliseconds,
+      );
       
       return response;
     } catch (e) {
       stopwatch.stop();
       
-      // Record error in Network Manager
-      if (callId.isNotEmpty) {
-        networkManager.recordResponse(
-          id: callId,
-          error: e.toString(),
-        );
-      }
-      
       // Enhanced error logging
-      LumioLogger.error('Network request failed: $method $url');
+      LumioLogger.error('HTTP request failed: $method $url');
       LumioLogger.error('Error: $e');
       LumioLogger.error('Duration: ${stopwatch.elapsedMilliseconds}ms');
       
-      // Log failed network call
-      Lumio.logNetworkCall(method, url, stopwatch.elapsedMilliseconds);
-      Lumio.logCrash('Network Error: $e', StackTrace.current.toString());
+      // Log failed request
+      await Lumio.logHttpRequest(
+        method: method,
+        url: url,
+        headers: requestHeaders,
+        body: requestBody,
+      );
+      
+      await Lumio.logCrash('HTTP Error: $e', StackTrace.current.toString());
       
       rethrow;
     }
@@ -149,26 +145,43 @@ class LumioHttpInterceptor {
       final response = await request();
       stopwatch.stop();
       
-      Lumio.logNetworkCall(method, url, stopwatch.elapsedMilliseconds);
+      await Lumio.logHttpRequest(
+        method: method,
+        url: url,
+        headers: null,
+        body: null,
+      );
       
       return response;
     } catch (e) {
       stopwatch.stop();
       
-      Lumio.logNetworkCall(method, url, stopwatch.elapsedMilliseconds);
-      Lumio.logCrash('Network Error: $e', StackTrace.current.toString());
+      await Lumio.logHttpRequest(
+        method: method,
+        url: url,
+        headers: null,
+        body: null,
+      );
+      
+      await Lumio.logCrash('HTTP Error for $url: $e', StackTrace.current.toString());
       
       rethrow;
     }
   }
 
-  /// Log a successful API response
+  /// Log a successful HTTP response
   static void logResponse(String url, int statusCode, String body) {
-    Lumio.logApiResponse(url, statusCode, body);
+    Lumio.logHttpResponse(
+      url: url,
+      statusCode: statusCode,
+      body: body,
+      headers: null,
+      durationMs: null,
+    );
   }
 
-  /// Log a network error
+  /// Log an HTTP error
   static void logError(String url, String error) {
-    Lumio.logCrash('Network Error for $url: $error', StackTrace.current.toString());
+    Lumio.logCrash('HTTP Error for $url: $error', StackTrace.current.toString());
   }
 }
