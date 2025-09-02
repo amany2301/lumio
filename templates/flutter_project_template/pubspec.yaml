@@ -1,0 +1,21 @@
+name: my_lumio_app
+description: A Flutter project with Lumio integration for debugging and monitoring
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+  flutter: '>=3.3.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  lumio: ^0.0.1  # Pre-configured Lumio integration
+  cupertino_icons: ^1.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
