@@ -5,29 +5,70 @@ import 'package:flutter/foundation.dart';
 
 import 'lumio_platform_interface.dart';
 
-// Core debugging components
-export 'src/debug_ui/lumio_debug_overlay.dart';
-export 'src/interceptors/lumio_http_interceptor.dart';
-export 'src/utils/lumio_logger.dart';
 
-/// Lumio - On-device debugging framework for Flutter applications
-/// 
-/// Features:
-/// - HTTP request/response inspection
-/// - Crash and ANR capture
-/// - On-device UI for monitoring
-/// - APIs to access debugging information
+// Network Plugin
+export 'src/plugins/network/network_manager.dart';
+export 'src/plugins/network/network_data.dart';
+export 'src/plugins/network/network_screen.dart';
+export 'src/plugins/network/network_detail_screen.dart';
+
+// Crashes Plugin
+export 'src/plugins/crashes/crash_manager.dart';
+export 'src/plugins/crashes/crash_data.dart';
+export 'src/plugins/crashes/crash_screen.dart';
+export 'src/plugins/crashes/crash_detail_screen.dart';
+
+// Logger Plugin
+export 'src/plugins/logger/logger_manager.dart';
+export 'src/plugins/logger/logger_data.dart';
+export 'src/plugins/logger/logger_screen.dart';
+export 'src/plugins/logger/log_detail_screen.dart';
+
+// Debug UI Framework
+export 'src/debug_ui/app_pulse_debug_overlay.dart';
+
+// Plugin System
+export 'src/plugins/plugin_base.dart';
+export 'src/plugins/network/network_plugin.dart';
+export 'src/plugins/crashes/crash_plugin.dart';
+export 'src/plugins/logger/logger_plugin.dart';
+
+/// Lumio - A comprehensive monitoring and logging SDK for Flutter applications
 class Lumio {
   static bool _isInitialized = false;
   static bool _crashMonitoringEnabled = false;
   static bool _anrMonitoringEnabled = false;
+  static bool _debugOverlayEnabled = false;
+  static final PluginRegistry _pluginRegistry = PluginRegistry();
 
-  /// Initialize Lumio debugging framework
+  /// Initialize Lumio monitoring with plugins
   static Future<void> initialize({
     bool enableCrashMonitoring = true,
     bool enableAnrMonitoring = true,
+    bool enableDebugOverlay = true,
+    List<Plugin>? plugins,
+    List<PluginGroup>? pluginGroups,
   }) async {
     if (_isInitialized) return;
+
+    // Register plugins
+    if (plugins != null) {
+      for (final plugin in plugins) {
+        _pluginRegistry.registerPlugin(plugin);
+      }
+    }
+
+    // Register plugin groups
+    if (pluginGroups != null) {
+      for (final group in pluginGroups) {
+        _pluginRegistry.registerGroup(group);
+      }
+    }
+
+    // Initialize all plugins
+    for (final plugin in _pluginRegistry.enabledPlugins) {
+      plugin.initialize();
+    }
 
     if (enableCrashMonitoring) {
       await initializeCrashMonitoring();
@@ -37,6 +78,7 @@ class Lumio {
       await initializeAnrMonitoring();
     }
 
+    _debugOverlayEnabled = enableDebugOverlay;
     _isInitialized = true;
   }
 
@@ -45,32 +87,21 @@ class Lumio {
     return LumioPlatform.instance.getPlatformVersion();
   }
 
-  /// Log HTTP request/response for inspection
-  static Future<void> logHttpRequest({
-    required String method,
-    required String url,
-    Map<String, String>? headers,
-    String? body,
-  }) async {
+  /// Log API response with URL, status code, and response body
+  static Future<void> logApiResponse(String url, int statusCode, String body) async {
     try {
-      await LumioPlatform.instance.logHttpRequest(method, url, headers, body);
+      await LumioPlatform.instance.logApiResponse(url, statusCode, body);
     } catch (e) {
-      debugPrint('Lumio: Failed to log HTTP request: $e');
+      debugPrint('AppPulse: Failed to log API response: $e');
     }
   }
 
-  /// Log HTTP response for inspection
-  static Future<void> logHttpResponse({
-    required String url,
-    required int statusCode,
-    required String body,
-    Map<String, String>? headers,
-    int? durationMs,
-  }) async {
+  /// Log network call with method, URL, and duration
+  static Future<void> logNetworkCall(String method, String url, int durationMs) async {
     try {
-      await LumioPlatform.instance.logHttpResponse(url, statusCode, body, headers, durationMs);
+      await LumioPlatform.instance.logNetworkCall(method, url, durationMs);
     } catch (e) {
-      debugPrint('Lumio: Failed to log HTTP response: $e');
+      debugPrint('AppPulse: Failed to log network call: $e');
     }
   }
 
@@ -79,7 +110,7 @@ class Lumio {
     try {
       await LumioPlatform.instance.logCrash(error, stackTrace);
     } catch (e) {
-      debugPrint('Lumio: Failed to log crash: $e');
+      debugPrint('AppPulse: Failed to log crash: $e');
     }
   }
 
@@ -88,7 +119,7 @@ class Lumio {
     try {
       await LumioPlatform.instance.logAnr(message);
     } catch (e) {
-      debugPrint('Lumio: Failed to log ANR: $e');
+      debugPrint('AppPulse: Failed to log ANR: $e');
     }
   }
 
@@ -115,7 +146,7 @@ class Lumio {
       await LumioPlatform.instance.initializeCrashMonitoring();
       _crashMonitoringEnabled = true;
     } catch (e) {
-      debugPrint('Lumio: Failed to initialize crash monitoring: $e');
+      debugPrint('AppPulse: Failed to initialize crash monitoring: $e');
     }
   }
 
@@ -127,11 +158,11 @@ class Lumio {
       await LumioPlatform.instance.initializeAnrMonitoring();
       _anrMonitoringEnabled = true;
     } catch (e) {
-      debugPrint('Lumio: Failed to initialize ANR monitoring: $e');
+      debugPrint('AppPulse: Failed to initialize ANR monitoring: $e');
     }
   }
 
-  /// Check if Lumio is initialized
+  /// Check if AppPulse is initialized
   static bool get isInitialized => _isInitialized;
 
   /// Check if crash monitoring is enabled
@@ -139,4 +170,54 @@ class Lumio {
 
   /// Check if ANR monitoring is enabled
   static bool get isAnrMonitoringEnabled => _anrMonitoringEnabled;
+  
+  /// Check if debug overlay is enabled
+  static bool get isDebugOverlayEnabled => _debugOverlayEnabled;
+  
+  /// Get plugin registry
+  static PluginRegistry get pluginRegistry => _pluginRegistry;
+  
+  /// Get all plugins
+  static List<Plugin> get allPlugins => _pluginRegistry.allPlugins;
+  
+  /// Get enabled plugins
+  static List<Plugin> get enabledPlugins => _pluginRegistry.enabledPlugins;
+  
+  /// Get plugin by name
+  static Plugin? getPlugin(String name) => _pluginRegistry.getPlugin(name);
+  
+  /// Show debug overlay
+  static void showDebugOverlay() {
+    if (_debugOverlayEnabled) {
+      // Implementation will be added
+    }
+  }
+  
+  /// Hide debug overlay
+  static void hideDebugOverlay() {
+    if (_debugOverlayEnabled) {
+      // Implementation will be added
+    }
+  }
+  
+  /// Toggle debug overlay
+  static void toggleDebugOverlay() {
+    if (_debugOverlayEnabled) {
+      // Implementation will be added
+    }
+  }
+  
+  /// Export all plugin data
+  static Future<Map<String, dynamic>> exportAllData() async {
+    return await _pluginRegistry.exportAllData();
+  }
+  
+  /// Dispose all plugins
+  static void dispose() {
+    for (final plugin in _pluginRegistry.allPlugins) {
+      plugin.dispose();
+    }
+    _pluginRegistry.clear();
+    _isInitialized = false;
+  }
 }

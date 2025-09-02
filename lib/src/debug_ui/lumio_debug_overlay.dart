@@ -1,72 +1,91 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import '../utils/lumio_logger.dart';
+import 'lumio_debug_screen.dart';
+import '../plugins/network/network_screen.dart';
+import '../plugins/crashes/crash_screen.dart';
+import '../plugins/logger/logger_screen.dart';
 
-/// Lumio debug overlay widget that provides on-device debugging UI
+/// A floating debug button overlay that can be added to any screen
 class LumioDebugOverlay extends StatefulWidget {
   final Widget child;
   final bool enabled;
+  final Alignment alignment;
+  final EdgeInsets margin;
 
   const LumioDebugOverlay({
     super.key,
     required this.child,
     this.enabled = true,
+    this.alignment = Alignment.bottomRight,
+    this.margin = const EdgeInsets.all(16.0),
   });
 
   @override
   State<LumioDebugOverlay> createState() => _LumioDebugOverlayState();
 }
 
-class _LumioDebugOverlayState extends State<LumioDebugOverlay> {
-  bool _isVisible = false;
+class _LumioDebugOverlayState extends State<LumioDebugOverlay>
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _rotationAnimation;
+  
   bool _isExpanded = false;
-  int _httpRequestCount = 0;
-  int _crashCount = 0;
-  int _anrCount = 0;
 
   @override
   void initState() {
     super.initState();
-    _loadCounts();
+    
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    
+    _scaleAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.elasticOut,
+    ));
+    
+    _rotationAnimation = Tween<double>(
+      begin: 0.0,
+      end: 0.125, // 45 degrees (1/8 of a full rotation)
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
   }
 
-  void _loadCounts() {
-    // TODO: Load actual counts from storage
-    _httpRequestCount = 0;
-    _crashCount = 0;
-    _anrCount = 0;
-  }
-
-  void _toggleVisibility() {
-    setState(() {
-      _isVisible = !_isVisible;
-    });
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   void _toggleExpanded() {
     setState(() {
       _isExpanded = !_isExpanded;
+      if (_isExpanded) {
+        _animationController.forward();
+      } else {
+        _animationController.reverse();
+      }
     });
   }
 
-  void _clearLogs() {
-    setState(() {
-      _httpRequestCount = 0;
-      _crashCount = 0;
-      _anrCount = 0;
-    });
-    LumioLogger.info('All debugging data cleared');
-  }
-
-  void _shareLogs() {
-    // TODO: Implement log sharing functionality
-    LumioLogger.info('Sharing debugging logs...');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Log sharing feature coming soon!'),
-        duration: Duration(seconds: 2),
+  void _openDebugConsole() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const LumioDebugScreen(),
       ),
     );
+    
+    // Collapse after opening
+    if (_isExpanded) {
+      _toggleExpanded();
+    }
   }
 
   @override
@@ -78,201 +97,168 @@ class _LumioDebugOverlayState extends State<LumioDebugOverlay> {
     return Stack(
       children: [
         widget.child,
-        if (_isVisible)
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 10,
-            right: 10,
-            child: _buildDebugPanel(),
-          ),
-        Positioned(
-          bottom: 20,
-          right: 20,
-          child: _buildToggleButton(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildToggleButton() {
-    return FloatingActionButton(
-      onPressed: _toggleVisibility,
-      backgroundColor: Colors.blue,
-      child: Icon(
-        _isVisible ? Icons.visibility_off : Icons.visibility,
-        color: Colors.white,
-      ),
-    );
-  }
-
-  Widget _buildDebugPanel() {
-    return Container(
-      width: _isExpanded ? 300 : 200,
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blue, width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(),
-          if (_isExpanded) _buildExpandedContent(),
-          _buildCollapsedContent(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.2),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(8),
-          topRight: Radius.circular(8),
-        ),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.bug_report, color: Colors.blue, size: 16),
-          const SizedBox(width: 4),
-          const Text(
-            'Lumio Debug',
-            style: TextStyle(
-              color: Colors.blue,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
-          ),
-          const Spacer(),
-          IconButton(
-            onPressed: _toggleExpanded,
-            icon: Icon(
-              _isExpanded ? Icons.expand_less : Icons.expand_more,
-              color: Colors.blue,
-              size: 16,
-            ),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-          ),
-          IconButton(
-            onPressed: _toggleVisibility,
-            icon: const Icon(Icons.close, color: Colors.blue, size: 16),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCollapsedContent() {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildMetric('HTTP', _httpRequestCount, Colors.green),
-          _buildMetric('Crash', _crashCount, Colors.red),
-          _buildMetric('ANR', _anrCount, Colors.orange),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExpandedContent() {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildMetricRow('HTTP Requests', _httpRequestCount, Colors.green),
-          _buildMetricRow('Crashes', _crashCount, Colors.red),
-          _buildMetricRow('ANRs', _anrCount, Colors.orange),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _clearLogs,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 4),
+        
+        // Debug Overlay
+        Positioned.fill(
+          child: Align(
+            alignment: widget.alignment,
+            child: Container(
+              margin: widget.margin,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  // Quick Action Buttons (when expanded)
+                  AnimatedBuilder(
+                    animation: _scaleAnimation,
+                    builder: (context, child) {
+                      return Transform.scale(
+                        scale: _scaleAnimation.value,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (_scaleAnimation.value > 0) ...[
+                              _buildQuickActionButton(
+                                icon: Icons.network_check,
+                                label: 'Network',
+                                color: Colors.blue,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const NetworkScreen(),
+                                    ),
+                                  );
+                                  _toggleExpanded();
+                                },
+                              ),
+                              
+                              const SizedBox(height: 8),
+                              
+                              _buildQuickActionButton(
+                                icon: Icons.bug_report,
+                                label: 'Crashes',
+                                color: Colors.red,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const CrashScreen(),
+                                    ),
+                                  );
+                                  _toggleExpanded();
+                                },
+                              ),
+                              
+                              const SizedBox(height: 8),
+                              
+                              _buildQuickActionButton(
+                                icon: Icons.list_alt,
+                                label: 'Logs',
+                                color: Colors.purple,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const LoggerScreen(),
+                                    ),
+                                  );
+                                  _toggleExpanded();
+                                },
+                              ),
+                              
+                              const SizedBox(height: 12),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
                   ),
-                  child: const Text('Clear', style: TextStyle(fontSize: 10)),
-                ),
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _shareLogs,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 4),
+                  
+                  // Main Debug Button
+                  GestureDetector(
+                    onTap: _toggleExpanded,
+                    onLongPress: _openDebugConsole,
+                    child: AnimatedBuilder(
+                      animation: _rotationAnimation,
+                      builder: (context, child) {
+                        return Transform.rotate(
+                          angle: _rotationAnimation.value * 2 * 3.14159,
+                          child: Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: Colors.indigo,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.developer_mode,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                  child: const Text('Share', style: TextStyle(fontSize: 10)),
-                ),
+                ],
               ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMetric(String label, int count, Color color) {
-    return Column(
-      children: [
-        Text(
-          count.toString(),
-          style: TextStyle(
-            color: color,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 10,
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildMetricRow(String label, int count, Color color) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
+  Widget _buildQuickActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
             ),
-          ),
-          Text(
-            count.toString(),
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white, size: 16),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
-/// LumioApp widget that wraps your app with debugging capabilities
+/// Convenience method to wrap your app with Lumio debug overlay
 class LumioApp extends StatelessWidget {
   final Widget child;
   final bool enableDebugOverlay;
@@ -285,10 +271,6 @@ class LumioApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!enableDebugOverlay) {
-      return child;
-    }
-
     return LumioDebugOverlay(
       enabled: enableDebugOverlay,
       child: child,

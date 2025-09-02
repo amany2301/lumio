@@ -16,22 +16,19 @@ class MethodChannelLumio extends LumioPlatform {
   }
 
   @override
-  Future<void> logHttpRequest(String method, String url, Map<String, String>? headers, String? body) async {
-    await methodChannel.invokeMethod('logHttpRequest', {
-      'method': method,
+  Future<void> logApiResponse(String url, int statusCode, String body) async {
+    await methodChannel.invokeMethod('logApiResponse', {
       'url': url,
-      'headers': headers,
+      'statusCode': statusCode,
       'body': body,
     });
   }
 
   @override
-  Future<void> logHttpResponse(String url, int statusCode, String body, Map<String, String>? headers, int? durationMs) async {
-    await methodChannel.invokeMethod('logHttpResponse', {
+  Future<void> logNetworkCall(String method, String url, int durationMs) async {
+    await methodChannel.invokeMethod('logNetworkCall', {
+      'method': method,
       'url': url,
-      'statusCode': statusCode,
-      'body': body,
-      'headers': headers,
       'durationMs': durationMs,
     });
   }

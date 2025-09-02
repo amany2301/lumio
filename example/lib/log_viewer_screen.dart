@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lumio/lumio.dart';
+import 'package:lumio/src/interceptors/lumio_http_interceptor.dart';
+import 'package:lumio/src/utils/lumio_logger.dart';
 
 class LogViewerScreen extends StatefulWidget {
   const LogViewerScreen({super.key});
@@ -18,30 +20,30 @@ class _LogViewerScreenState extends State<LogViewerScreen> {
     super.dispose();
   }
 
-  void _makeHttpGetRequest() async {
+  void _makeApiCall() async {
     try {
       // This will generate detailed logs with cURL commands
-      LumioLogger.info('Making HTTP GET request to JSONPlaceholder...');
+      LumioLogger.info('Making API call to JSONPlaceholder...');
       
       await _httpClient.get('https://jsonplaceholder.typicode.com/posts/1');
       
-      LumioLogger.success('HTTP GET request completed successfully!');
+      LumioLogger.success('API call completed successfully!');
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('HTTP GET request completed! Check console for detailed logs with cURL command.'),
+            content: Text('API call completed! Check console for detailed logs with cURL command.'),
             backgroundColor: Colors.green,
           ),
         );
       }
     } catch (e) {
-      LumioLogger.error('HTTP GET request failed: $e');
+      LumioLogger.error('API call failed: $e');
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('HTTP GET request failed: $e'),
+            content: Text('API call failed: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -49,9 +51,9 @@ class _LogViewerScreenState extends State<LogViewerScreen> {
     }
   }
 
-  void _makeHttpPostRequest() async {
+  void _makePostRequest() async {
     try {
-      LumioLogger.info('Making HTTP POST request...');
+      LumioLogger.info('Making POST request...');
       
       await _httpClient.post(
         'https://jsonplaceholder.typicode.com/posts',
@@ -62,23 +64,23 @@ class _LogViewerScreenState extends State<LogViewerScreen> {
         },
       );
       
-      LumioLogger.success('HTTP POST request completed!');
+      LumioLogger.success('POST request completed!');
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('HTTP POST request completed! Check console for cURL command.'),
+            content: Text('POST request completed! Check console for cURL command.'),
             backgroundColor: Colors.green,
           ),
         );
       }
     } catch (e) {
-      LumioLogger.error('HTTP POST request failed: $e');
+      LumioLogger.error('POST request failed: $e');
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('HTTP POST request failed: $e'),
+            content: Text('POST request failed: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -86,9 +88,9 @@ class _LogViewerScreenState extends State<LogViewerScreen> {
     }
   }
 
-  void _simulateHttpError() async {
+  void _simulateError() async {
     try {
-      LumioLogger.warning('Simulating HTTP error...');
+      LumioLogger.warning('Simulating network error...');
       
       await _httpClient.get('https://httpstat.us/500');
       
@@ -96,7 +98,7 @@ class _LogViewerScreenState extends State<LogViewerScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('HTTP error simulated! Check console for error logs.'),
+            content: Text('Error simulated! Check console for error logs.'),
             backgroundColor: Colors.orange,
           ),
         );
@@ -106,7 +108,7 @@ class _LogViewerScreenState extends State<LogViewerScreen> {
 
   void _copyInstructions() {
     const instructions = '''
-🔍 HOW TO VIEW YOUR HTTP DEBUG LOGS:
+🔍 HOW TO VIEW YOUR API LOGS:
 
 📱 iOS (Recommended):
 1. Open Xcode
@@ -118,13 +120,13 @@ class _LogViewerScreenState extends State<LogViewerScreen> {
 💻 Terminal/VS Code:
 1. Run: flutter logs
 2. Look for [Lumio] entries
-3. You'll see detailed HTTP requests/responses and cURL commands
+3. You'll see detailed API responses and cURL commands
 
 🎯 What You'll See:
-✅ Complete HTTP requests with headers and body
-✅ HTTP responses with status codes and JSON formatting
+✅ Complete API responses with JSON formatting
+✅ Request/Response headers
 ✅ cURL commands you can copy and paste
-✅ Request duration and performance metrics
+✅ Request duration and status codes
 ✅ Error logs with stack traces
 
 🔧 Customize Logging:
@@ -146,7 +148,7 @@ LumioLogger.setCurlGeneration(false);  // Disable cURL generation
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('HTTP Debug Logs'),
+        title: const Text('Log Viewer Guide'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
@@ -173,7 +175,7 @@ LumioLogger.setCurlGeneration(false);  // Disable cURL generation
                         Icon(Icons.info_outline, color: Colors.blue.shade700),
                         const SizedBox(width: 8),
                         Text(
-                          'HTTP Debug Logging',
+                          'How to View Your API Logs',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -184,7 +186,7 @@ LumioLogger.setCurlGeneration(false);  // Disable cURL generation
                     ),
                     const SizedBox(height: 12),
                     const Text(
-                      'Lumio provides detailed HTTP debugging with cURL commands. Here\'s how to view them:',
+                      'Lumio provides detailed logging with cURL commands. Here\'s how to view them:',
                       style: TextStyle(fontSize: 16),
                     ),
                   ],
@@ -247,7 +249,7 @@ LumioLogger.setCurlGeneration(false);  // Disable cURL generation
             const SizedBox(height: 24),
             
             Text(
-              'Test HTTP Requests:',
+              'Test API Calls:',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -258,9 +260,9 @@ LumioLogger.setCurlGeneration(false);  // Disable cURL generation
             const SizedBox(height: 16),
             
             ElevatedButton.icon(
-              onPressed: _makeHttpGetRequest,
+              onPressed: _makeApiCall,
               icon: const Icon(Icons.get_app),
-              label: const Text('Test HTTP GET Request'),
+              label: const Text('Test GET Request'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
@@ -270,9 +272,9 @@ LumioLogger.setCurlGeneration(false);  // Disable cURL generation
             const SizedBox(height: 8),
             
             ElevatedButton.icon(
-              onPressed: _makeHttpPostRequest,
+              onPressed: _makePostRequest,
               icon: const Icon(Icons.send),
-              label: const Text('Test HTTP POST Request'),
+              label: const Text('Test POST Request'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
@@ -282,12 +284,72 @@ LumioLogger.setCurlGeneration(false);  // Disable cURL generation
             const SizedBox(height: 8),
             
             ElevatedButton.icon(
-              onPressed: _simulateHttpError,
+              onPressed: _simulateError,
               icon: const Icon(Icons.error_outline),
-              label: const Text('Simulate HTTP Error (500)'),
+              label: const Text('Simulate Error (500)'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
                 foregroundColor: Colors.white,
+              ),
+            ),
+            
+            const SizedBox(height: 16),
+            
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NetworkScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.network_check),
+              label: const Text('🚀 Open Network Monitor'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.indigo,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+            
+            const SizedBox(height: 8),
+            
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CrashScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.bug_report),
+              label: const Text('💥 Open Crash Monitor'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+            
+            const SizedBox(height: 8),
+            
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LoggerScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.list_alt),
+              label: const Text('📝 Open Logger Monitor'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.purple,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
               ),
             ),
             
@@ -315,10 +377,10 @@ LumioLogger.setCurlGeneration(false);  // Disable cURL generation
                       ],
                     ),
                     const SizedBox(height: 8),
-                    const Text('✅ Complete HTTP requests with headers and body'),
-                    const Text('✅ HTTP responses with status codes and JSON formatting'),
+                    const Text('✅ Complete API responses with JSON formatting'),
+                    const Text('✅ Request/Response headers'),
                     const Text('✅ cURL commands you can copy and paste'),
-                    const Text('✅ Request duration and performance metrics'),
+                    const Text('✅ Request duration and status codes'),
                     const Text('✅ Error logs with stack traces'),
                   ],
                 ),

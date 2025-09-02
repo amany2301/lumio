@@ -4,15 +4,33 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:lumio/lumio.dart';
+import 'package:lumio/src/interceptors/lumio_http_interceptor.dart';
 import 'log_viewer_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Lumio debugging framework
+  // Initialize Lumio monitoring
   await Lumio.initialize(
     enableCrashMonitoring: true,
     enableAnrMonitoring: true,
+  );
+  
+  // Initialize CrashManager with device info
+  CrashManager().initialize(
+    userId: 'demo_user_123',
+    deviceInfo: {
+      'app_version': '1.0.0',
+      'build_number': '1',
+      'environment': 'debug',
+    },
+  );
+  
+  // Initialize LoggerManager
+  LoggerManager().initialize(
+    userId: 'demo_user_123',
+    minLevel: LogLevel.verbose,
+    maxStoredLogs: 5000,
   );
   
   runApp(const MyApp());
@@ -64,35 +82,44 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  void _testHttpLogging() async {
+  void _testApiLogging() async {
     setState(() {
-      _statusMessage = 'Testing HTTP logging...';
+      _statusMessage = 'Testing API logging...';
     });
 
     try {
-      // Simulate an HTTP request
-      await Lumio.logHttpRequest(
-        method: 'GET',
-        url: 'https://jsonplaceholder.typicode.com/posts/1',
-        headers: {'Content-Type': 'application/json'},
-        body: null,
-      );
-
-      // Simulate an HTTP response
-      await Lumio.logHttpResponse(
-        url: 'https://jsonplaceholder.typicode.com/posts/1',
-        statusCode: 200,
-        body: '{"userId": 1, "id": 1, "title": "Test Post", "body": "This is a test post body"}',
-        headers: {'Content-Type': 'application/json'},
-        durationMs: 250,
+      // Simulate an API call
+      await Lumio.logApiResponse(
+        'https://jsonplaceholder.typicode.com/posts/1',
+        200,
+        '{"userId": 1, "id": 1, "title": "Test Post", "body": "This is a test post body"}',
       );
 
       setState(() {
-        _statusMessage = 'HTTP logging test completed!';
+        _statusMessage = 'API response logged successfully!';
       });
     } catch (e) {
       setState(() {
-        _statusMessage = 'HTTP logging failed: $e';
+        _statusMessage = 'API logging failed: $e';
+      });
+    }
+  }
+
+  void _testNetworkLogging() async {
+    setState(() {
+      _statusMessage = 'Testing network logging...';
+    });
+
+    try {
+      // Simulate a network call
+      await Lumio.logNetworkCall('GET', 'https://api.example.com/data', 250);
+
+      setState(() {
+        _statusMessage = 'Network call logged successfully!';
+      });
+    } catch (e) {
+      setState(() {
+        _statusMessage = 'Network logging failed: $e';
       });
     }
   }
@@ -107,7 +134,7 @@ class _MyAppState extends State<MyApp> {
       await Lumio.logCrash(
         'Test Exception: Division by zero',
         '''
-#0      _MyAppState._testCrashLogging (package:lumio_example/main.dart:95:7)
+#0      _MyAppState._testCrashLogging (package:app_pulse_example/main.dart:95:7)
 #1      _InkResponseState._handleTap (package:flutter/src/material/ink_well.dart:1005:21)
 #2      GestureRecognizer.invokeCallback (package:flutter/src/gestures/recognizer.dart:253:24)
         ''',
@@ -150,7 +177,7 @@ class _MyAppState extends State<MyApp> {
     });
 
     try {
-      // This will automatically log both the HTTP request and response
+      // This will automatically log both the network call and API response
       await _httpClient.get('https://jsonplaceholder.typicode.com/posts/1');
       
       setState(() {
@@ -185,103 +212,107 @@ class _MyAppState extends State<MyApp> {
       home: LumioApp(
         enableDebugOverlay: true,
         child: Scaffold(
-          appBar: AppBar(
-            title: const Text('Lumio Debug Example'),
-            backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-            actions: [
-              Builder(
-                builder: (context) => IconButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LogViewerScreen(),
+        appBar: AppBar(
+          title: const Text('Lumio Example'),
+          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+          actions: [
+            Builder(
+              builder: (context) => IconButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LogViewerScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.visibility),
+                tooltip: 'View Logs Guide',
+              ),
+            ),
+          ],
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Platform: $_platformVersion',
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
-                    );
-                  },
-                  icon: const Icon(Icons.visibility),
-                  tooltip: 'View Logs',
+                      const SizedBox(height: 8),
+                      Text(
+                        'Crash Monitoring: ${Lumio.isCrashMonitoringEnabled ? "Enabled" : "Disabled"}',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      Text(
+                        'ANR Monitoring: ${Lumio.isAnrMonitoringEnabled ? "Enabled" : "Disabled"}',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
                 ),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    _statusMessage,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Test Lumio Features:',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _testApiLogging,
+                child: const Text('Test API Response Logging'),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: _testNetworkLogging,
+                child: const Text('Test Network Call Logging'),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: _testCrashLogging,
+                child: const Text('Test Crash Logging'),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: _testAnrLogging,
+                child: const Text('Test ANR Logging'),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: _testHttpClient,
+                child: const Text('Test HTTP Client (Auto-logging)'),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _simulateActualCrash,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('⚠️ Simulate Actual Crash'),
               ),
             ],
           ),
-          body: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Platform: $_platformVersion',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Crash Monitoring: ${Lumio.isCrashMonitoringEnabled ? "Enabled" : "Disabled"}',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                        Text(
-                          'ANR Monitoring: ${Lumio.isAnrMonitoringEnabled ? "Enabled" : "Disabled"}',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      _statusMessage,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Test Lumio Debug Features:',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _testHttpLogging,
-                  child: const Text('Test HTTP Request/Response Logging'),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: _testCrashLogging,
-                  child: const Text('Test Crash Logging'),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: _testAnrLogging,
-                  child: const Text('Test ANR Logging'),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: _testHttpClient,
-                  child: const Text('Test HTTP Client (Auto-logging)'),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _simulateActualCrash,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('⚠️ Simulate Actual Crash'),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
-    );
+    ));
   }
 }
