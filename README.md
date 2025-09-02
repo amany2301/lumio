@@ -4,11 +4,11 @@
 
 It comes with a UI to monitor and share the information, as well as APIs to access and use that information in your application.
 
-> **Inspired by [Android Pluto](https://github.com/androidPluto/pluto.git)** - Bringing the same powerful debugging capabilities to Flutter!
+
 
 ## 🎯 What is Lumio?
 
-Lumio is a comprehensive debugging framework that provides real-time monitoring, logging, and debugging capabilities for Flutter applications. Similar to Android Pluto, it offers:
+Lumio is a comprehensive debugging framework that provides real-time monitoring, logging, and debugging capabilities for Flutter applications. It offers:
 
 - **Network Inspection**: Monitor HTTP requests/responses with detailed analysis
 - **Crash Detection**: Capture and analyze crashes with stack traces
@@ -321,19 +321,7 @@ class CustomPlugin extends Plugin {
 }
 ```
 
-## 📊 Comparison with Android Pluto
 
-| Feature | Android Pluto | Lumio (Flutter) |
-|---------|--------------|-----------------|
-| Network Inspection | ✅ | ✅ |
-| Crash Detection | ✅ | ✅ |
-| ANR Monitoring | ✅ | ✅ (Android) |
-| Plugin Architecture | ✅ | ✅ |
-| Debug UI | ✅ | ✅ |
-| Cross-Platform | ❌ (Android only) | ✅ (iOS + Android) |
-| Hot Reload Support | ❌ | ✅ |
-| Custom Plugins | ✅ | ✅ |
-| Data Inspection | ✅ | ✅ |
 
 ## 🤝 Contributing
 
