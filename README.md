@@ -1,341 +1,193 @@
-# Lumio 🚀 - Flutter Debugging Framework
-
-**Lumio is an on-device debugging framework for Flutter applications**, which helps in the inspection of HTTP requests/responses, captures Crashes and ANRs, and manipulates application data on the go.
-
-It comes with a UI to monitor and share the information, as well as APIs to access and use that information in your application.
+# Lumio
 
 > **Inspired by Android Pluto** - Bringing the same powerful debugging capabilities to Flutter!
 
+A simple and lightweight monitoring and logging SDK for Flutter applications. Lumio helps you monitor network calls, capture crashes, and log important events in your Flutter app.
 
 ## 🎯 What is Lumio?
 
-Lumio is a comprehensive debugging framework that provides real-time monitoring, logging, and debugging capabilities for Flutter applications. It offers:
+Lumio is a Flutter plugin that provides:
 
-- **Network Inspection**: Monitor HTTP requests/responses with detailed analysis
-- **Crash Detection**: Capture and analyze crashes with stack traces
-- **ANR Monitoring**: Detect Application Not Responding events (Android)
-- **Data Manipulation**: Inspect and modify app data on-the-go
-- **Plugin Architecture**: Extensible plugin system for custom debugging tools
-- **Debug UI**: Rich interface for monitoring and sharing debug information
+- **Network Monitoring** - Automatically logs HTTP requests and responses
+- **Crash Detection** - Captures and logs crashes and exceptions
+- **ANR Monitoring** - Detects Application Not Responding events (Android)
+- **Simple Logging** - Easy-to-use logging system with different levels
 
-## ✨ Features
+## 🚀 Quick Start
 
-### 🔌 Plugin System
-- **Modular Architecture**: Add only the plugins you need
-- **Custom Plugins**: Create your own debugging plugins
-- **Plugin Groups**: Organize plugins into logical groups
-- **Hot Reload Support**: Plugins work seamlessly with Flutter hot reload
-
-### 🌐 Network Plugin
-- **HTTP Request/Response Inspection**: View all network traffic
-- **cURL Generation**: Copy requests as cURL commands
-- **Performance Metrics**: Request duration, size, and timing
-- **Header Analysis**: Inspect request and response headers
-- **Body Inspection**: View formatted JSON/XML responses
-
-### 🐛 Crash Plugin
-- **Flutter Exception Capture**: Automatic crash detection
-- **Native Crash Handling**: iOS/Android native crash capture
-- **Stack Trace Analysis**: Detailed error analysis
-- **Crash Reports**: Exportable crash reports
-- **ANR Detection**: Application Not Responding monitoring (Android)
-
-### 📝 Logger Plugin
-- **Multi-level Logging**: Verbose, Debug, Info, Warning, Error, Fatal
-- **Real-time Log Streaming**: Live log monitoring
-- **Log Filtering**: Filter by level, tag, or content
-- **Log Export**: Export logs for analysis
-- **Session Tracking**: Track logs per user session
-
-### 💾 Data Plugins
-- **Shared Preferences Inspector**: View and modify SharedPreferences
-- **Database Inspector**: Inspect SQLite databases
-- **File System Browser**: Browse app's file system
-- **Memory Profiler**: Monitor memory usage
-
-### 🎨 Debug UI
-- **Floating Debug Button**: Quick access to debug tools
-- **Notification Integration**: System notifications for debug access
-- **Dark/Light Theme**: Adaptive UI themes
-- **Responsive Design**: Works on all screen sizes
-- **Export Features**: Share debug data via email, files, etc.
-
-## 🚀 Installation
-
-### Add Dependencies
+### 1. Add Dependency
 
 Add Lumio to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  lumio: ^0.0.1
-
-dev_dependencies:
-  # For development builds
-  lumio: ^0.0.1
+  lumio:
+    path: ../lumio  # For local development
+    # Or use git: https://github.com/amany2301/lumio.git
 ```
 
-### Initialize Lumio
+### 2. Initialize Lumio
 
-Initialize Lumio in your app's main function:
+In your `main.dart`:
 
 ```dart
-import 'package:flutter/material.dart';
 import 'package:lumio/lumio.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Lumio with plugins
+  // Initialize Lumio
   await Lumio.initialize(
     enableCrashMonitoring: true,
     enableAnrMonitoring: true,
-    plugins: [
-      NetworkPlugin(),
-      CrashPlugin(),
-      LoggerPlugin(),
-      SharedPreferencesPlugin(),
-    ],
   );
   
   runApp(MyApp());
 }
 ```
 
-## 🔌 Plugin Integration
+### 3. Use Lumio HTTP Client
 
-### Core Plugin Bundle
-
-For quick setup, use the core plugin bundle:
+Replace your HTTP calls with Lumio's HTTP client for automatic logging:
 
 ```dart
-await Lumio.initialize(
-  plugins: [
-    CorePluginBundle(), // Includes Network, Crash, and Logger plugins
-  ],
+import 'package:lumio/lumio.dart';
+
+final httpClient = LumioHttpClient();
+
+// GET request
+final response = await httpClient.get('https://api.example.com/data');
+
+// POST request
+final response = await httpClient.post(
+  'https://api.example.com/data',
+  body: {'key': 'value'},
 );
 ```
 
-### Individual Plugins
-
-Add specific plugins based on your needs:
+### 4. Manual Logging
 
 ```dart
-await Lumio.initialize(
-  plugins: [
-    NetworkPlugin(),
-    CrashPlugin(),
-    LoggerPlugin(),
-    SharedPreferencesPlugin(),
-    DatabasePlugin(),
-    FileSystemPlugin(),
-  ],
-);
-```
-
-### Plugin Groups
-
-Organize plugins into groups for better categorization:
-
-```dart
-class DataSourcePluginGroup extends PluginGroup {
-  @override
-  String get name => 'DataSource Group';
-  
-  @override
-  List<Plugin> get plugins => [
-    SharedPreferencesPlugin(),
-    DatabasePlugin(),
-    FileSystemPlugin(),
-  ];
-}
-
-await Lumio.initialize(
-  pluginGroups: [
-    DataSourcePluginGroup(),
-  ],
-);
-```
-
-## 📱 Usage Examples
-
-### Network Monitoring
-
-```dart
-// Automatic monitoring with LumioHttpClient
-final client = LumioHttpClient();
-
-// All requests are automatically logged
-final response = await client.get('https://api.example.com/users');
-final postResponse = await client.post(
-  'https://api.example.com/users',
-  body: {'name': 'John', 'email': 'john@example.com'},
-);
-
-client.close();
-```
-
-### Manual Logging
-
-```dart
-// Log network calls
-await Lumio.logNetworkCall('GET', 'https://api.example.com/users', 250);
-
 // Log API responses
-await Lumio.logApiResponse(
-  'https://api.example.com/users',
-  200,
-  '{"users": [{"id": 1, "name": "John"}]}',
-);
+await Lumio.logApiResponse(url, statusCode, responseBody);
+
+// Log network calls
+await Lumio.logNetworkCall('GET', url, durationMs);
 
 // Log crashes
-await Lumio.logCrash(
-  'Exception: Null check operator used on a null value',
-  'Stack trace here...',
-);
+await Lumio.logCrash(error, stackTrace);
 
-// Log ANRs (Android only)
-await Lumio.logAnr('Main thread blocked for 5000ms');
+// Log ANR events
+await Lumio.logAnr('Application not responding');
 ```
 
-### Debug UI Access
+## 📱 Features
 
-```dart
-// Show debug overlay
-Lumio.showDebugOverlay();
+### Network Monitoring
+- Automatic logging of HTTP requests and responses
+- Custom HTTP client with built-in logging
+- Request/response timing and status codes
 
-// Hide debug overlay
-Lumio.hideDebugOverlay();
+### Crash Detection
+- Automatic crash capture and logging
+- Manual crash logging support
+- Stack trace preservation
 
-// Toggle debug overlay
-Lumio.toggleDebugOverlay();
-```
+### ANR Monitoring
+- Android-specific Application Not Responding detection
+- Automatic ANR event logging
 
-## 🎨 Debug UI Features
-
-### Floating Debug Button
-- **Always Accessible**: Floating button for quick debug access
-- **Customizable Position**: Drag to reposition
-- **Minimal Intrusion**: Small, unobtrusive design
-
-### Debug Screens
-- **Network Monitor**: View all HTTP traffic
-- **Crash Monitor**: Analyze crashes and exceptions
-- **Logger Monitor**: Browse and filter logs
-- **Data Inspector**: Inspect app data
-
-### Export Features
-- **Share Debug Data**: Export via email, files, or clipboard
-- **Screenshot Capture**: Capture debug screens
-- **Data Export**: Export logs, crashes, and network data
+### Simple Logging
+- Easy-to-use logging utilities
+- Different log levels (debug, info, warning, error)
+- Console output with [Lumio] prefix
 
 ## 🔧 Configuration
 
-### Basic Configuration
+### Initialize Options
 
 ```dart
 await Lumio.initialize(
-  enableCrashMonitoring: true,
-  enableAnrMonitoring: true,
-  enableDebugOverlay: true,
-  maxStoredLogs: 10000,
-  plugins: [
-    NetworkPlugin(),
-    CrashPlugin(),
-    LoggerPlugin(),
-  ],
+  enableCrashMonitoring: true,  // Enable crash detection
+  enableAnrMonitoring: true,    // Enable ANR monitoring (Android only)
 );
 ```
 
-### Plugin-Specific Configuration
+### HTTP Client Options
 
 ```dart
-await Lumio.initialize(
-  plugins: [
-    NetworkPlugin(
-      enableCurlGeneration: true,
-      maxStoredRequests: 1000,
-      enableBodyInspection: true,
-    ),
-    CrashPlugin(
-      enableNativeCrashCapture: true,
-      enableANRDetection: true,
-      maxStoredCrashes: 100,
-    ),
-    LoggerPlugin(
-      minLogLevel: LogLevel.debug,
-      enableRealTimeStreaming: true,
-      maxStoredLogs: 5000,
-    ),
-  ],
+final httpClient = LumioHttpClient(
+  timeout: Duration(seconds: 30),
+  headers: {'Authorization': 'Bearer token'},
 );
 ```
 
-## 🧪 Testing
+## 📊 Usage Examples
 
-### Run Tests
-
-```bash
-flutter test
-```
-
-### Example App
-
-```bash
-cd example
-flutter run
-```
-
-The example app demonstrates:
-- All plugin features
-- Debug UI usage
-- Network monitoring
-- Crash simulation
-- Log management
-
-## 🔌 Creating Custom Plugins
-
-Lumio supports custom plugins. Here's how to create one:
+### Basic Network Monitoring
 
 ```dart
-class CustomPlugin extends Plugin {
-  @override
-  String get name => 'Custom Plugin';
+import 'package:lumio/lumio.dart';
+
+class ApiService {
+  final _httpClient = LumioHttpClient();
   
-  @override
-  String get description => 'A custom debugging plugin';
-  
-  @override
-  Widget buildDebugScreen() {
-    return CustomDebugScreen();
-  }
-  
-  @override
-  void initialize() {
-    // Plugin initialization logic
-  }
-  
-  @override
-  void dispose() {
-    // Cleanup logic
+  Future<Map<String, dynamic>> fetchData() async {
+    try {
+      final response = await _httpClient.get('https://api.example.com/data');
+      return response;
+    } catch (e) {
+      // Error will be automatically logged
+      rethrow;
+    }
   }
 }
 ```
 
+### Manual Crash Logging
 
+```dart
+try {
+  // Your code here
+} catch (e, stackTrace) {
+  await Lumio.logCrash(e.toString(), stackTrace.toString());
+  rethrow;
+}
+```
+
+### Custom Logging
+
+```dart
+import 'package:lumio/lumio.dart';
+
+// Log different types of events
+await Lumio.logApiResponse('https://api.example.com/users', 200, '{"users": []}');
+await Lumio.logNetworkCall('POST', 'https://api.example.com/users', 150);
+```
+
+## 🏗️ Project Structure
+
+```
+lib/
+├── lumio.dart                    # Main Lumio class
+├── lumio_platform_interface.dart # Platform interface
+├── lumio_method_channel.dart     # Method channel implementation
+└── src/
+    ├── models/
+    │   └── lumio_models.dart     # Data models
+    ├── interceptors/
+    │   └── lumio_http_interceptor.dart # HTTP client
+    └── utils/
+        └── lumio_logger.dart     # Logging utilities
+```
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md).
-
-### Development Setup
-
 1. Fork the repository
-2. Clone your fork
-3. Create a feature branch
-4. Make your changes
-5. Add tests
-6. Submit a pull request
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## 📄 License
 
@@ -344,18 +196,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - Inspired by [Android Pluto](https://github.com/androidPluto/pluto.git)
-- Built for the Flutter community
-- Thanks to all contributors and users
-
-## 📞 Support
-
-- **Documentation**: [GitHub Wiki](https://github.com/amany2301/lumio/wiki)
-- **Issues**: [GitHub Issues](https://github.com/amany2301/lumio/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/amany2301/lumio/discussions)
-
----
-
-**Lumio** - The Flutter equivalent of Android Pluto! 🚀
-
-*Bringing powerful debugging capabilities to Flutter applications*
+- Built with Flutter and Dart
 

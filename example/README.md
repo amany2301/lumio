@@ -1,6 +1,6 @@
-# app_pulse_example
+# lumio_example
 
-Demonstrates how to use the app_pulse plugin.
+A new Flutter project.
 
 ## Getting Started
 

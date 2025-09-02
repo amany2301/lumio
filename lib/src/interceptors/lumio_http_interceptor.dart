@@ -41,10 +41,6 @@ class LumioHttpClient {
     String? requestBody;
     Map<String, String> requestHeaders = {};
     
-    // Record the request start in Network Manager
-    final networkManager = NetworkManager();
-    String callId = '';
-    
     try {
       final uri = Uri.parse(url);
       final request = await _httpClient.openUrl(method, uri);
@@ -61,14 +57,6 @@ class LumioHttpClient {
         requestHeaders['content-type'] = 'application/json';
       }
       
-      // Record request in Network Manager
-      callId = networkManager.recordRequest(
-        method: method,
-        url: url,
-        headers: requestHeaders,
-        body: requestBody,
-      );
-      
       final response = await request.close();
       stopwatch.stop();
       
@@ -81,40 +69,18 @@ class LumioHttpClient {
         responseHeaders[name] = values.join(', ');
       });
       
-      // Record response in Network Manager
-      networkManager.recordResponse(
-        id: callId,
-        statusCode: response.statusCode,
-        headers: responseHeaders,
-        body: responseBody,
-      );
+      // Log the network call and API response
+      LumioLogger.info('Network Request: $method $url');
+      LumioLogger.info('Status Code: ${response.statusCode}');
+      LumioLogger.info('Duration: ${stopwatch.elapsedMilliseconds}ms');
       
-                // Enhanced logging with cURL generation
-          LumioLogger.logApiResponse(
-        method: method,
-        url: url,
-        statusCode: response.statusCode,
-        responseBody: responseBody,
-        headers: responseHeaders,
-        requestBody: requestBody,
-        durationMs: stopwatch.elapsedMilliseconds,
-      );
-      
-      // Also log to Lumio for platform logging
+      // Log to Lumio for platform logging
       Lumio.logNetworkCall(method, url, stopwatch.elapsedMilliseconds);
       Lumio.logApiResponse(url, response.statusCode, responseBody);
       
       return response;
     } catch (e) {
       stopwatch.stop();
-      
-      // Record error in Network Manager
-      if (callId.isNotEmpty) {
-        networkManager.recordResponse(
-          id: callId,
-          error: e.toString(),
-        );
-      }
       
       // Enhanced error logging
       LumioLogger.error('Network request failed: $method $url');
