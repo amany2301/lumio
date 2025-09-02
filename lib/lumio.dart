@@ -29,9 +29,6 @@ export 'src/debug_ui/app_pulse_debug_overlay.dart';
 
 // Plugin System
 export 'src/plugins/plugin_base.dart';
-export 'src/plugins/network/network_plugin.dart';
-export 'src/plugins/crashes/crash_plugin.dart';
-export 'src/plugins/logger/logger_plugin.dart';
 
 /// Lumio - A comprehensive monitoring and logging SDK for Flutter applications
 class Lumio {
@@ -39,36 +36,14 @@ class Lumio {
   static bool _crashMonitoringEnabled = false;
   static bool _anrMonitoringEnabled = false;
   static bool _debugOverlayEnabled = false;
-  static final PluginRegistry _pluginRegistry = PluginRegistry();
 
-  /// Initialize Lumio monitoring with plugins
+  /// Initialize Lumio monitoring
   static Future<void> initialize({
     bool enableCrashMonitoring = true,
     bool enableAnrMonitoring = true,
     bool enableDebugOverlay = true,
-    List<Plugin>? plugins,
-    List<PluginGroup>? pluginGroups,
   }) async {
     if (_isInitialized) return;
-
-    // Register plugins
-    if (plugins != null) {
-      for (final plugin in plugins) {
-        _pluginRegistry.registerPlugin(plugin);
-      }
-    }
-
-    // Register plugin groups
-    if (pluginGroups != null) {
-      for (final group in pluginGroups) {
-        _pluginRegistry.registerGroup(group);
-      }
-    }
-
-    // Initialize all plugins
-    for (final plugin in _pluginRegistry.enabledPlugins) {
-      plugin.initialize();
-    }
 
     if (enableCrashMonitoring) {
       await initializeCrashMonitoring();
@@ -174,17 +149,7 @@ class Lumio {
   /// Check if debug overlay is enabled
   static bool get isDebugOverlayEnabled => _debugOverlayEnabled;
   
-  /// Get plugin registry
-  static PluginRegistry get pluginRegistry => _pluginRegistry;
-  
-  /// Get all plugins
-  static List<Plugin> get allPlugins => _pluginRegistry.allPlugins;
-  
-  /// Get enabled plugins
-  static List<Plugin> get enabledPlugins => _pluginRegistry.enabledPlugins;
-  
-  /// Get plugin by name
-  static Plugin? getPlugin(String name) => _pluginRegistry.getPlugin(name);
+
   
   /// Show debug overlay
   static void showDebugOverlay() {
@@ -207,17 +172,21 @@ class Lumio {
     }
   }
   
-  /// Export all plugin data
+  /// Export all data
   static Future<Map<String, dynamic>> exportAllData() async {
-    return await _pluginRegistry.exportAllData();
+    return {
+      'initialized': _isInitialized,
+      'crashMonitoringEnabled': _crashMonitoringEnabled,
+      'anrMonitoringEnabled': _anrMonitoringEnabled,
+      'debugOverlayEnabled': _debugOverlayEnabled,
+    };
   }
   
-  /// Dispose all plugins
+  /// Dispose Lumio
   static void dispose() {
-    for (final plugin in _pluginRegistry.allPlugins) {
-      plugin.dispose();
-    }
-    _pluginRegistry.clear();
     _isInitialized = false;
+    _crashMonitoringEnabled = false;
+    _anrMonitoringEnabled = false;
+    _debugOverlayEnabled = false;
   }
 }

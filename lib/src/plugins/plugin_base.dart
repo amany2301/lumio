@@ -80,7 +80,7 @@ class PluginStatistics {
   final DateTime lastActivity;
   final Duration uptime;
   
-  const PluginStatistics({
+  PluginStatistics({
     this.totalItems = 0,
     this.errorCount = 0,
     this.warningCount = 0,
@@ -142,38 +142,6 @@ class PluginGroupConfiguration {
       'category': category,
     };
   }
-}
-
-/// Core plugin bundle (similar to Pluto's bundle-core)
-class CorePluginBundle extends PluginGroup {
-  @override
-  String get id => 'core-bundle';
-  
-  @override
-  String get name => 'Core Bundle';
-  
-  @override
-  String get description => 'Essential debugging plugins for network, crashes, and logging';
-  
-  @override
-  IconData? get icon => Icons.bug_report;
-  
-  @override
-  Color? get color => Colors.blue;
-  
-  @override
-  List<Plugin> get plugins => [
-    NetworkPlugin(),
-    CrashPlugin(),
-    LoggerPlugin(),
-  ];
-  
-  @override
-  PluginGroupConfiguration get configuration => const PluginGroupConfiguration(
-    collapsible: false,
-    expandedByDefault: true,
-    category: 'core',
-  );
 }
 
 /// Plugin registry for managing all plugins
