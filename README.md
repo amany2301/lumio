@@ -4,6 +4,7 @@
 
 It comes with a UI to monitor and share the information, as well as APIs to access and use that information in your application.
 
+> **Inspired by Android Pluto** - Bringing the same powerful debugging capabilities to Flutter!
 
 
 ## 🎯 What is Lumio?
