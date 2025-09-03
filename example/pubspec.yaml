@@ -1,5 +1,5 @@
 name: lumio_example
-description: A simple example of Lumio usage
+description: A comprehensive example of Lumio usage demonstrating all features
 version: 1.0.0+1
 
 environment:
@@ -11,6 +11,8 @@ dependencies:
     sdk: flutter
   lumio:
     path: ../
+  http: ^1.1.0
+  dio: ^5.4.0
   cupertino_icons: ^1.0.2
 
 dev_dependencies:

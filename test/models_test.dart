@@ -35,6 +35,10 @@ void main() {
           'url': 'https://api.example.com/users',
           'durationMs': 500,
           'timestamp': timestamp.toIso8601String(),
+          'error': null,
+          'headers': null,
+          'requestBody': null,
+          'statusCode': null,
         });
       });
     });
@@ -71,6 +75,8 @@ void main() {
           'statusCode': 201,
           'body': '{"id": 1, "title": "Test"}',
           'timestamp': timestamp.toIso8601String(),
+          'headers': null,
+          'responseSize': 26,
         });
       });
     });
@@ -103,6 +109,8 @@ void main() {
           'error': 'NullPointerException',
           'stackTrace': 'at main.dart:123\nat widget.dart:456',
           'timestamp': timestamp.toIso8601String(),
+          'type': null,
+          'metadata': null,
         });
       });
     });
@@ -131,48 +139,62 @@ void main() {
         expect(json, {
           'message': 'ANR detected during heavy computation',
           'timestamp': timestamp.toIso8601String(),
+          'durationMs': null,
+          'threadInfo': null,
+          'metadata': null,
         });
       });
     });
 
-    group('LumioConfig', () {
-      test('creates instance with default values', () {
-        const config = LumioConfig();
+    group('LogSummary', () {
+      test('creates summary from logs', () {
+        final networkCalls = [
+          NetworkCallLog(
+            method: 'GET',
+            url: 'https://api.example.com/data',
+            durationMs: 100,
+            timestamp: DateTime.now(),
+          ),
+        ];
+        
+        final apiResponses = [
+          ApiResponseLog(
+            url: 'https://api.example.com/data',
+            statusCode: 200,
+            body: '{"data": "test"}',
+            timestamp: DateTime.now(),
+          ),
+        ];
+        
+        final crashes = [
+          CrashLog(
+            error: 'Test error',
+            stackTrace: 'Stack trace',
+            timestamp: DateTime.now(),
+          ),
+        ];
+        
+        final anrs = [
+          AnrLog(
+            message: 'ANR detected',
+            timestamp: DateTime.now(),
+          ),
+        ];
 
-        expect(config.enableCrashMonitoring, isTrue);
-        expect(config.enableAnrMonitoring, isTrue);
-        expect(config.enableNetworkLogging, isTrue);
-        expect(config.enableApiResponseLogging, isTrue);
-        expect(config.maxLogEntries, equals(1000));
-      });
-
-      test('creates instance with custom values', () {
-        const config = LumioConfig(
-          enableCrashMonitoring: false,
-          enableAnrMonitoring: false,
-          enableNetworkLogging: false,
-          enableApiResponseLogging: false,
-          maxLogEntries: 500,
+        final summary = LogSummary.fromLogs(
+          networkCalls: networkCalls,
+          apiResponses: apiResponses,
+          crashes: crashes,
+          anrs: anrs,
         );
 
-        expect(config.enableCrashMonitoring, isFalse);
-        expect(config.enableAnrMonitoring, isFalse);
-        expect(config.enableNetworkLogging, isFalse);
-        expect(config.enableApiResponseLogging, isFalse);
-        expect(config.maxLogEntries, equals(500));
-      });
-
-      test('creates instance with partial custom values', () {
-        const config = LumioConfig(
-          enableCrashMonitoring: false,
-          maxLogEntries: 2000,
-        );
-
-        expect(config.enableCrashMonitoring, isFalse);
-        expect(config.enableAnrMonitoring, isTrue); // default
-        expect(config.enableNetworkLogging, isTrue); // default
-        expect(config.enableApiResponseLogging, isTrue); // default
-        expect(config.maxLogEntries, equals(2000));
+        expect(summary.totalLogs, equals(4));
+        expect(summary.networkCalls, equals(1));
+        expect(summary.apiResponses, equals(1));
+        expect(summary.crashes, equals(1));
+        expect(summary.anrs, equals(1));
+        expect(summary.statusCodes['200'], equals(1));
+        expect(summary.errorTypes['Unknown'], equals(1));
       });
     });
   });
